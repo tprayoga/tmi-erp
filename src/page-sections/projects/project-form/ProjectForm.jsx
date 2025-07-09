@@ -9,10 +9,13 @@ import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import { styled } from '@mui/material/styles'; // CUSTOM COMPONENTS
-
+import { Select, MenuItem } from '@mui/material';
 import Modal from '@/components/modal';
 import Dropzone from '@/components/dropzone';
 import { FormProvider, TextField, DatePicker } from '@/components/form'; // STYLED COMPONENT
+import { useFieldArray } from 'react-hook-form';
+import Delete from '@mui/icons-material/Delete';
+
 
 const StyledStack = styled(Stack)(({
   theme
@@ -32,6 +35,29 @@ const StyledStack = styled(Stack)(({
     paddingTop: '1.5rem'
   }
 }));
+// fields = [{product_name, quantity, unit, specification, brand_preferred}]
+
+const InquiryItems = () => {
+  const { fields, append, remove } = useFieldArray({ name: 'items' });
+  return (
+    <Stack spacing={1}>
+      {fields.map((item, index) => (
+        <Stack key={item.id} spacing={1} direction="row">
+          <TextField name={`items.${index}.product_name`} size="small" placeholder="Product Name" />
+          <TextField name={`items.${index}.quantity`} size="small" type="number" placeholder="Qty" />
+          <TextField name={`items.${index}.unit`} size="small" placeholder="Unit" />
+          <TextField name={`items.${index}.specification`} size="small" placeholder="Specification" />
+          <TextField name={`items.${index}.brand_preferred`} size="small" placeholder="Preferred Brand" />
+          <IconButton onClick={() => remove(index)}><Delete /></IconButton>
+        </Stack>
+      ))}
+      <Button onClick={() => append({})}>+ Add Item</Button>
+    </Stack>
+  );
+};
+
+
+
 const validationSchema = Yup.object().shape({
   name: Yup.string().required('Name is Required!'),
   description: Yup.string().required('Description is Required!'),
@@ -64,51 +90,98 @@ export default function ProjectForm({
     alert(JSON.stringify(values, null, 2));
   });
   return <Modal open={open} handleClose={handleClose}>
-      <FormProvider methods={methods} onSubmit={handleSubmitForm}>
-        <StyledStack spacing={2}>
-          <div>
-            <p className="label">Project Name</p>
-            <TextField fullWidth size="small" name="name" placeholder="Project name" />
-          </div>
+<FormProvider methods={methods} onSubmit={handleSubmitForm}>
+  <StyledStack spacing={2}>
 
-          <div>
-            <p className="label">Deadline</p>
-            <DatePicker name="deadline" label="" />
-          </div>
+    {/* Customer Info */}
+    <div>
+      <p className="label">Customer Name</p>
+      <TextField fullWidth size="small" name="customer_name" placeholder="PT Sumber Makmur" />
+    </div>
 
-          <div>
-            <p className="label">Description</p>
-            <TextField rows={2} fullWidth multiline size="small" name="description" placeholder="Description" />
-          </div>
+    <div>
+      <p className="label">Contact Person</p>
+      <TextField fullWidth size="small" name="contact_person" placeholder="Nama PIC / Kontak Customer" />
+    </div>
 
-          <div>
-            <p className="label">Add Picture</p>
-            <Dropzone />
-          </div>
+    <div>
+      <p className="label">Email</p>
+      <TextField fullWidth size="small" name="email" placeholder="example@domain.com" />
+    </div>
 
-          <div>
-            <p className="label">Team</p>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <IconButton className="add-btn">
-                <Add fontSize="small" />
-              </IconButton>
+    <div>
+      <p className="label">Phone</p>
+      <TextField fullWidth size="small" name="phone" placeholder="08xxxx" />
+    </div>
 
-              <Avatar alt="Remy Sharp" src="/static/user/user-7.png" />
-              <Avatar alt="Travis Howard" src="/static/user/user-6.png" />
-              <Avatar alt="Cindy Baker" src="/static/user/user-5.png" />
-            </Stack>
-          </div>
+    {/* Inquiry Details */}
+    <div>
+      <p className="label">Subject</p>
+      <TextField fullWidth size="small" name="subject" placeholder="Contoh: Permintaan Penawaran CCTV" />
+    </div>
 
-          <div className="btn-group">
-            <Button loading={isSubmitting} variant="contained" fullWidth>
-              Create
-            </Button>
+    <div>
+      <p className="label">Due Date</p>
+      <DatePicker name="due_date" label="" />
+    </div>
 
-            <Button variant="outlined" fullWidth onClick={handleClose}>
-              Cancel
-            </Button>
-          </div>
-        </StyledStack>
-      </FormProvider>
+    <div>
+      <p className="label">Priority</p>
+      <Select fullWidth size="small" name="priority">
+        <MenuItem value="Low">Low</MenuItem>
+        <MenuItem value="Medium">Medium</MenuItem>
+        <MenuItem value="High">High</MenuItem>
+      </Select>
+    </div>
+
+    <div>
+      <p className="label">Source</p>
+      <Select fullWidth size="small" name="source">
+        <MenuItem value="WhatsApp">WhatsApp</MenuItem>
+        <MenuItem value="Email">Email</MenuItem>
+        <MenuItem value="Call">Call</MenuItem>
+        <MenuItem value="Web">Web</MenuItem>
+      </Select>
+    </div>
+
+    <div>
+      <p className="label">Notes</p>
+      <TextField rows={2} fullWidth multiline size="small" name="notes" placeholder="Catatan tambahan dari customer" />
+    </div>
+
+    {/* Reference File */}
+    <div>
+      <p className="label">Reference File</p>
+      <Dropzone name="reference_file" />
+    </div>
+
+    {/* Inquiry Items */}
+    <div>
+      <p className="label">Items</p>
+      <InquiryItems name="items" /> {/* Komponen dinamis tambah produk */}
+    </div>
+
+    {/* Team Assign (Optional) */}
+    <div>
+      <p className="label">Assigned To</p>
+      <Select fullWidth size="small" name="assigned_to">
+        <MenuItem value="andi">Andi</MenuItem>
+        <MenuItem value="budi">Budi</MenuItem>
+        <MenuItem value="citra">Citra</MenuItem>
+      </Select>
+    </div>
+
+    {/* Buttons */}
+    <div className="btn-group">
+      <Button loading={isSubmitting} variant="contained" fullWidth>
+        Save Inquiry
+      </Button>
+      <Button variant="outlined" fullWidth onClick={handleClose}>
+        Cancel
+      </Button>
+    </div>
+  </StyledStack>
+</FormProvider>
+
     </Modal>;
 }

@@ -1,85 +1,168 @@
-export const PROJECTS = [{
-  id: 1,
-  name: 'Website Redesign',
-  status: 'in-progress',
-  startDate: '2024-01-15',
-  endDate: '2024-03-30',
-  progress: 45,
-  description: 'Revamping the company website for improved usability and design.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}, {
-  id: 2,
-  name: 'Mobile App Development',
-  status: 'upcoming',
-  startDate: '2024-04-01',
-  endDate: '2024-09-15',
-  progress: 0,
-  description: 'Developing a new app to enhance customer engagement.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}, {
-  id: 3,
-  name: 'Data Migration',
-  status: 'completed',
-  startDate: '2023-10-01',
-  endDate: '2023-12-01',
-  progress: 100,
-  description: 'Successfully migrated company data to a secure cloud platform.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}, {
-  id: 4,
-  name: 'SEO Optimization',
-  status: 'in-progress',
-  startDate: '2024-02-01',
-  endDate: '2024-06-30',
-  progress: 30,
-  description: 'Enhancing website visibility through strategic SEO practices.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}, {
-  id: 5,
-  name: 'Product Launch',
-  status: 'upcoming',
-  startDate: '2024-05-01',
-  endDate: '2024-07-15',
-  progress: 0,
-  description: 'Planning and executing the launch of our next-generation product.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}, {
-  id: 6,
-  name: 'Cloud Integration',
-  status: 'completed',
-  startDate: '2023-07-01',
-  endDate: '2023-10-01',
-  progress: 100,
-  description: 'Implemented cloud solutions for scalable and efficient operations.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}, {
-  id: 7,
-  name: 'HR System Upgrade',
-  status: 'blocked',
-  startDate: '2024-01-10',
-  endDate: '2024-04-30',
-  progress: 20,
-  description: 'Project temporarily on hold due to resource constraints.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}, {
-  id: 8,
-  name: 'Marketing Campaign',
-  status: 'upcoming',
-  startDate: '2024-03-01',
-  endDate: '2024-06-30',
-  progress: 0,
-  description: 'Designing a creative campaign to boost brand awareness.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}, {
-  id: 9,
-  name: 'Cybersecurity Enhancement',
-  status: 'completed',
-  startDate: '2023-08-15',
-  endDate: '2023-12-15',
-  progress: 100,
-  description: 'Improved security infrastructure to protect sensitive data.',
-  members: ['/static/user/user-16.png', '/static/user/user-17.png', '/static/user/user-18.png', '/static/user/user-19.png', '/static/user/user-17.png', '/static/user/user-18.png']
-}];
+export const PROJECTS = [
+  // 🟡 Open (4 items)
+  {
+    id: 1,
+    name: 'Permintaan Baut Hex M16',
+    status: 'open',
+    startDate: '2025-07-01',
+    endDate: '2025-07-04',
+    progress: 0,
+    description: 'Inquiry baru masuk dari PT Baja Prima, menunggu review sales.',
+    members: ['/static/user/user-01.png']
+  },
+  {
+    id: 2,
+    name: 'Permintaan Sekrup Stainless M8',
+    status: 'open',
+    startDate: '2025-07-02',
+    endDate: '2025-07-06',
+    progress: 0,
+    description: 'Customer mengirim inquiry via email, belum ditindaklanjuti.',
+    members: ['/static/user/user-02.png']
+  },
+  {
+    id: 3,
+    name: 'Permintaan Mur Kunci Flange',
+    status: 'open',
+    startDate: '2025-07-03',
+    endDate: '2025-07-07',
+    progress: 0,
+    description: 'Sales baru menerima inquiry, belum di-assign.',
+    members: ['/static/user/user-03.png']
+  },
+  {
+    id: 4,
+    name: 'Inquiry Sekrup Besi Panjang',
+    status: 'open',
+    startDate: '2025-07-04',
+    endDate: '2025-07-08',
+    progress: 0,
+    description: 'Customer tanya sekrup 5cm, perlu validasi spesifikasi.',
+    members: ['/static/user/user-04.png']
+  },
+
+  // 🔵 In Progress (3 items)
+  {
+    id: 5,
+    name: 'RFQ Baut Proyek PLTU',
+    status: 'in_progress',
+    startDate: '2025-07-01',
+    endDate: '2025-07-05',
+    progress: 40,
+    description: 'Inquiry sedang dalam tahap pembuatan RFQ untuk PLTU Cirebon.',
+    members: ['/static/user/user-05.png']
+  },
+  {
+    id: 6,
+    name: 'Negosiasi Quotation untuk PT Tangguh',
+    status: 'in_progress',
+    startDate: '2025-07-02',
+    endDate: '2025-07-06',
+    progress: 50,
+    description: 'Sudah kirim Quotation v1, menunggu revisi dari tim teknis.',
+    members: ['/static/user/user-06.png']
+  },
+  {
+    id: 7,
+    name: 'RFQ Mur Proyek Jalan Tol',
+    status: 'in_progress',
+    startDate: '2025-07-03',
+    endDate: '2025-07-09',
+    progress: 60,
+    description: 'Masuk tahap finalisasi RFQ untuk pengadaan Mur M24.',
+    members: ['/static/user/user-07.png']
+  },
+
+  // 🟠 Waiting Customer (2 items)
+  {
+    id: 8,
+    name: 'Quotation untuk Sekrup Baja Ringan',
+    status: 'waiting_customer',
+    startDate: '2025-06-30',
+    endDate: '2025-07-04',
+    progress: 70,
+    description: 'Quotation sudah dikirim, menunggu approval customer.',
+    members: ['/static/user/user-08.png']
+  },
+  {
+    id: 9,
+    name: 'Revisi Penawaran Mur Flange',
+    status: 'waiting_customer',
+    startDate: '2025-07-01',
+    endDate: '2025-07-05',
+    progress: 65,
+    description: 'Quotation v2 dikirim, menunggu balasan terkait delivery.',
+    members: ['/static/user/user-09.png']
+  },
+
+  // 🟢 Closed - Won (5 items)
+  {
+    id: 10,
+    name: 'Order PO Sekrup Baja - PT Tangguh',
+    status: 'closed_won',
+    startDate: '2025-06-15',
+    endDate: '2025-06-25',
+    progress: 100,
+    description: 'Deal berhasil, PO sudah diterima dan pengiriman dijadwalkan.',
+    members: ['/static/user/user-10.png']
+  },
+  {
+    id: 11,
+    name: 'PO Baut Galvanis - PT Makmur',
+    status: 'closed_won',
+    startDate: '2025-06-20',
+    endDate: '2025-06-30',
+    progress: 100,
+    description: 'Order masuk dari PT Makmur, barang siap dikirim.',
+    members: ['/static/user/user-11.png']
+  },
+  {
+    id: 12,
+    name: 'Penjualan Mur M10 - Proyek Jembatan',
+    status: 'closed_won',
+    startDate: '2025-06-10',
+    endDate: '2025-06-20',
+    progress: 100,
+    description: 'PO disetujui setelah negosiasi harga.',
+    members: ['/static/user/user-12.png']
+  },
+  {
+    id: 13,
+    name: 'Pengadaan Sekrup Panjang - PT Tera',
+    status: 'closed_won',
+    startDate: '2025-06-12',
+    endDate: '2025-06-22',
+    progress: 100,
+    description: 'Quotation disetujui, pengiriman dalam proses.',
+    members: ['/static/user/user-13.png']
+  },
+  {
+    id: 14,
+    name: 'Pengadaan Proyek PLN - Mur Stainless',
+    status: 'closed_won',
+    startDate: '2025-06-18',
+    endDate: '2025-06-28',
+    progress: 100,
+    description: 'PO berhasil setelah revisi quotation v2.',
+    members: ['/static/user/user-14.png']
+  },
+
+  // 🔴 Closed - Lost (1 item)
+  {
+    id: 15,
+    name: 'Permintaan Sekrup Besi - PT Kalah',
+    status: 'closed_lost',
+    startDate: '2025-06-01',
+    endDate: '2025-06-08',
+    progress: 100,
+    description: 'Customer memilih vendor lain karena harga lebih murah.',
+    members: ['/static/user/user-15.png']
+  },
+
+  // ❌ Cancelled (0 items)
+  // Tidak perlu dimasukkan, sesuai amount = 0
+];
+
 export const PROJECT_STATUS = [{
   title: 'All',
   value: 'all',
