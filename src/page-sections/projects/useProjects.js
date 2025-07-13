@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'; // CUSTOM DATA
 
 import { PROJECTS } from '@/__fakeData__/projects';
+
 export default function useProjects() {
   const [openModal, setOpenModal] = useState(false);
   const [filters, setFilters] = useState({
-    status: 'all',
+    status: 'open',
     searchValue: ''
   });
   const handleOpenModal = useCallback(() => {
