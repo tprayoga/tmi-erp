@@ -13,7 +13,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import { useState, useMemo } from "react";
 import { Autocomplete, TextField } from "@mui/material";
 import TableIms from "@/components/table/table-ims";
-
+import { generateCustomQuotationPDF } from "./generateCustomQuotationPDF.jsx";
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 const Div = styled("div")({
   padding: "1.5rem",
@@ -109,57 +109,14 @@ export default function ProjectDetails({ href }) {
         return "default";
     }
   };
-  const columns = useMemo(() => {
-    return [
-      {
-        id: "no_doc",
-        header: "NO. DOC",
-        cell: ({ row }) => {
-          return (
-            <Typography variant="body2" className="font-bold cursor-pointer hover:underline" component={Link} href={`${href}/${row.original.id}`}>
-              {row.original.no_doc}
-            </Typography>
-          );
-        },
-      },
-      {
-        id: "reqOwner",
-        header: "REQUEST OWNER",
-        cell: ({ row }) => {
-          return <div className="capitalize">{row.original.reqOwner}</div>;
-        },
-      },
-      {
-        id: "created",
-        header: "REQUEST DATE",
-      },
-      {
-        id: "priority",
-        header: "PRIORITY",
-      },
-      {
-        id: "company",
-        header: "COMPANY",
-      },
-      {
-        id: "approver",
-        header: "APPROVER",
-      },
-      {
-        id: "status",
-        header: "STATUS",
-        cell: ({ row }) => {
-          const status = row.original.status;
-
-          return (
-            <Label variant="soft" color={getColorApprover(status)} className="capitalize text-xs">
-              {status}
-            </Label>
-          );
-        },
-      },
-    ];
-  }, [href]);
+  const quotationData = {
+    customer: "PT. Sukses Selalu",
+    date: "2025-07-14",
+    items: [
+      { description: "Laptop Asus ROG", qty: 2, price: 25000000 },
+      { description: 'Monitor LG 27"', qty: 1, price: 5000000 },
+    ],
+  };
 
   return (
     <div container className="pt-2 pb-4">
@@ -171,7 +128,7 @@ export default function ProjectDetails({ href }) {
               <Typography variant="body2" fontWeight={600}>
                 {data.inquiry_code}
               </Typography>
-              <Button variant="contained" color="primary" size="medium">
+              <Button variant="contained" color="primary" size="medium" onClick={() => generateCustomQuotationPDF()}>
                 Generate Document
               </Button>
             </Box>

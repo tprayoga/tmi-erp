@@ -1,37 +1,41 @@
-import Grid from '@mui/material/Grid2'; // CUSTOM COMPONENTS
+import Grid from "@mui/material/Grid2"; // CUSTOM COMPONENTS
 
-import StatusFilter from '../StatusFilter';
-import SearchFilter from '../SearchFilter';
-import ProjectForm from '../project-form';
-import ProjectCard1 from '../project-card-1';
+import StatusFilter from "../StatusFilter";
+import SearchFilter from "../SearchFilter";
+import ProjectForm from "../project-form";
+import ProjectCard1 from "../project-card-1";
 
-import useProjects from '../useProjects';
+import useProjects from "../useProjects";
+import { supabase } from "@/lib/supabase"; // SUPABASE CLIENT
+import { useState, useEffect } from "react"; // REACT HOOKS
 
 export default function ProjectVersionOnePageView() {
-  const {
-    filters,
-    openModal,
-    filteredProjects,
-    handleChangeFilter,
-    handleCloseModal,
-    handleOpenModal
-  } = useProjects();
+  const { filters, openModal, filteredProjects, handleChangeFilter, handleCloseModal, handleOpenModal } = useProjects();
 
   console.log(filteredProjects); // ✅ Aman digunakan di browser
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Failed to get user:", error.message);
+      } else {
+        setUser(data.user);
+        console.log("✅ user:", data.user);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   return (
     <div className="pt-2 pb-4">
       {/* PROJECT FILTER BY STATUS */}
-      <StatusFilter
-        value={filters.status}
-        handleChange={(value) => handleChangeFilter('status', value)}
-      />
+      <StatusFilter value={filters.status} handleChange={(value) => handleChangeFilter("status", value)} />
 
       {/* SEARCH INPUT AND CREATE BUTTON */}
-      <SearchFilter
-        handleOpenModal={handleOpenModal}
-        handleChange={(value) => handleChangeFilter('searchValue', value)}
-      />
+      <SearchFilter handleOpenModal={handleOpenModal} handleChange={(value) => handleChangeFilter("searchValue", value)} />
 
       {/* PROJECT CREATION MODAL */}
       <ProjectForm open={openModal} handleClose={handleCloseModal} />
@@ -39,12 +43,7 @@ export default function ProjectVersionOnePageView() {
       {/* PROJECT CARDS */}
       <Grid container spacing={3}>
         {filteredProjects.map((project) => (
-          <Grid
-            key={project.id}
-            xs={12}
-            sm={6}
-            lg={4}
-          >
+          <Grid key={project.id} xs={12} sm={6} lg={4}>
             <ProjectCard1 project={project} />
           </Grid>
         ))}

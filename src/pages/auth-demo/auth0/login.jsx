@@ -1,7 +1,9 @@
-import { AuthProvider } from '@/contexts/auth0Context';
-import LoginView from './LoginView';
+import { AuthProvider } from "@/contexts/auth0Context";
+import LoginView from "./LoginView";
 export default function LoginWithAuth0() {
-  return <AuthProvider>
+  return (
+    <AuthProvider>
       <LoginView />
-    </AuthProvider>;
+    </AuthProvider>
+  );
 }

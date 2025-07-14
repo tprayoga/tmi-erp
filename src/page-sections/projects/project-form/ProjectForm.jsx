@@ -1,22 +1,20 @@
 import * as Yup from "yup";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup"; // MUI ICON COMPONENT
+import { useForm, useFieldArray } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 
-import Add from "@mui/icons-material/Add"; // MUI
 import * as XLSX from "xlsx";
-import Stack from "@mui/material/Stack";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-import Avatar from "@mui/material/Avatar";
-import IconButton from "@mui/material/IconButton";
-import { styled } from "@mui/material/styles"; // CUSTOM COMPONENTS
-import { Select, MenuItem } from "@mui/material";
+import { useState } from "react";
+
+// MUI
+import { Stack, Button, Typography, IconButton, Avatar, MenuItem, Select } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import Add from "@mui/icons-material/Add";
+import Delete from "@mui/icons-material/Delete";
+
+// Custom components
 import Modal from "@/components/modal";
 import Dropzone from "@/components/dropzone";
-import { FormProvider, TextField, DatePicker } from "@/components/form"; // STYLED COMPONENT
-import { useFieldArray } from "react-hook-form";
-import Delete from "@mui/icons-material/Delete";
-import { useState } from "react";
+import { FormProvider, TextField, DatePicker } from "@/components/form";
 
 const StyledStack = styled(Stack)(({ theme }) => ({
   "& .add-btn": {
@@ -34,7 +32,31 @@ const StyledStack = styled(Stack)(({ theme }) => ({
     paddingTop: "1.5rem",
   },
 }));
-// fields = [{product_name, quantity, unit, specification, brand_preferred}]
+
+const validationSchema = Yup.object().shape({
+  customer_name: Yup.string().required("Customer Name is required"),
+  contact_person: Yup.string().required("Contact Person is required"),
+  email: Yup.string().email("Invalid email").required("Email is required"),
+  phone: Yup.string().required("Phone is required"),
+  subject: Yup.string().required("Subject is required"),
+  due_date: Yup.date().required("Due date is required"),
+  priority: Yup.string().required("Priority is required"),
+  source: Yup.string().required("Source is required"),
+  notes: Yup.string(),
+  reference_file: Yup.mixed(),
+  assigned_to: Yup.string().required("Assigned to is required"),
+  items: Yup.array()
+    .of(
+      Yup.object().shape({
+        product_name: Yup.string().required("Product name is required"),
+        quantity: Yup.number().typeError("Quantity must be a number").required("Quantity is required"),
+        unit: Yup.string().required("Unit is required"),
+        specification: Yup.string(),
+        brand_preferred: Yup.string(),
+      })
+    )
+    .min(1, "At least one item is required"),
+});
 
 const InquiryItems = () => {
   const { fields, append, remove } = useFieldArray({ name: "items" });
@@ -42,23 +64,27 @@ const InquiryItems = () => {
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-
     if (!file) return;
 
     const reader = new FileReader();
-
     reader.onload = (evt) => {
       const data = new Uint8Array(evt.target.result);
       const workbook = XLSX.read(data, { type: "array" });
-
-      const sheetName = workbook.SheetNames[0]; // Ambil sheet pertama
+      const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-
       const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-      setJsonData(json);
-      console.log("Hasil JSON:", json);
-    };
 
+      setJsonData(json);
+      json.forEach((item) => {
+        append({
+          product_name: item.product_name || "",
+          quantity: item.quantity || "",
+          unit: item.unit || "",
+          specification: item.specification || "",
+          brand_preferred: item.brand_preferred || "",
+        });
+      });
+    };
     reader.readAsArrayBuffer(file);
   };
 
@@ -76,49 +102,65 @@ const InquiryItems = () => {
           </IconButton>
         </Stack>
       ))}
+
       <div>
         <Typography variant="h6" gutterBottom>
           Import Excel dan Konversi ke JSON
         </Typography>
-
         <Button variant="contained" component="label">
           Upload Excel File
           <input type="file" hidden accept=".xlsx, .xls" onChange={handleFileUpload} />
         </Button>
-
-        {jsonData.length > 0 && <pre style={{ background: "#f4f4f4", padding: "1rem", marginTop: "1rem" }}>{JSON.stringify(jsonData, null, 2)}</pre>}
+        {jsonData.length > 0 && <pre style={{ background: "#f4f4f4", padding: "1rem", marginTop: "1rem", maxHeight: 300, overflow: "auto" }}>{JSON.stringify(jsonData, null, 2)}</pre>}
       </div>
-      <Button onClick={() => append({})}>+ Add Item</Button>
+
+      <Button
+        onClick={() =>
+          append({
+            product_name: "",
+            quantity: "",
+            unit: "",
+            specification: "",
+            brand_preferred: "",
+          })
+        }
+      >
+        + Add Item
+      </Button>
     </Stack>
   );
 };
 
-const validationSchema = Yup.object().shape({
-  name: Yup.string().required("Name is Required!"),
-  description: Yup.string().required("Description is Required!"),
-  deadline: Yup.date().required("Deadline is Required!"),
-}); // ==============================================================
-
-// ==============================================================
 export default function ProjectForm({ open, handleClose }) {
   const initialValues = {
-    name: "",
-    image: "",
-    members: [],
-    description: "",
-    deadline: new Date(),
+    customer_name: "",
+    contact_person: "",
+    email: "",
+    phone: "",
+    subject: "",
+    due_date: new Date(),
+    priority: "",
+    source: "",
+    notes: "",
+    reference_file: null,
+    assigned_to: "",
+    items: [],
   };
+
   const methods = useForm({
     defaultValues: initialValues,
     resolver: yupResolver(validationSchema),
   });
+
   const {
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
+
   const handleSubmitForm = handleSubmit((values) => {
     alert(JSON.stringify(values, null, 2));
   });
+
   return (
     <Modal open={open} handleClose={handleClose}>
       <FormProvider methods={methods} onSubmit={handleSubmitForm}>
@@ -188,7 +230,7 @@ export default function ProjectForm({ open, handleClose }) {
           {/* Inquiry Items */}
           <div>
             <p className="label">Items</p>
-            <InquiryItems name="items" /> {/* Komponen dinamis tambah produk */}
+            <InquiryItems />
           </div>
 
           {/* Team Assign (Optional) */}
@@ -203,7 +245,7 @@ export default function ProjectForm({ open, handleClose }) {
 
           {/* Buttons */}
           <div className="btn-group">
-            <Button loading={isSubmitting} variant="contained" fullWidth>
+            <Button type="submit" variant="contained" fullWidth>
               Save Inquiry
             </Button>
             <Button variant="outlined" fullWidth onClick={handleClose}>
