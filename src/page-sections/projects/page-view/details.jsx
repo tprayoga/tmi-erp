@@ -353,15 +353,15 @@ export default function ProjectDetails({ href }) {
                 Item Requested
               </Typography>
 
-              {items.map((item, i) => (
+              {items?.map((item, i) => (
                 <Box key={i} mb={3} p={2} border={1} borderColor="grey.300" borderRadius={2}>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                     <Box>
                       <Typography fontWeight={600}>
-                        {i + 1}. {item.product_name}
+                        {i + 1}. {item?.product_name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" mb={1}>
-                        {item.quantity} {item.unit} • {item.specification} • Preferred: {item.brand_preferred}
+                        {item?.quantity} {item?.unit} • {item?.specification} • Preferred: {item?.brand_preferred}
                       </Typography>
                     </Box>
 
