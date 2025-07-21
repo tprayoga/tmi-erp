@@ -11,8 +11,9 @@ import { useState, useEffect } from "react"; // REACT HOOKS
 export default function ProjectVersionOnePageView() {
   const { filters, openModal, filteredProjects, handleChangeFilter, handleCloseModal, handleOpenModal } = useProjects();
 
-  console.log(filteredProjects); // ✅ Aman digunakan di browser
+  // console.log(filteredProjects); // ✅ Aman digunakan di browser
   const [user, setUser] = useState(null);
+  console.log(filteredProjects);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -145,24 +146,6 @@ export default function ProjectVersionOnePageView() {
           </Grid>
         ))}
       </Grid>
-
-      <div style={{ padding: "1rem" }}>
-        <h3>Upload ke Supabase Storage</h3>
-        <input type="file" onChange={handleUpload} disabled={uploading} />
-        {uploading && <p>Uploading...</p>}
-        {fileUrl && (
-          <div style={{ marginTop: "1rem" }}>
-            <p>
-              <strong>{fileName}</strong> berhasil diupload.
-            </p>
-            <a href={fileUrl} target="_blank" rel="noopener noreferrer">
-              🔗 Lihat file
-            </a>
-          </div>
-        )}
-      </div>
-
-      <button onClick={() => handleSubmit(formValues)}>Submit Form</button>
     </div>
   );
 }

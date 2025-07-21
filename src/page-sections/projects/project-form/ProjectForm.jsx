@@ -289,7 +289,7 @@ export default function ProjectForm({ open, handleClose }) {
 
         <div>
           <p className="label">Due Date</p>
-          <DatePicker name="due_date" label="" />
+          <DatePicker InputLabelProps={{ shrink: true }} name="due_date" label="" />
         </div>
 
         <div>
