@@ -69,7 +69,7 @@ export default function ProjectCard1({ project }) {
       <FlexBetween gap={2} alignItems="flex-start">
         <Stack spacing={0.5} className="truncate">
           {/* Project Name */}
-          <Link href="/dashboard/projects/details">
+          <Link href={`/dashboard/projects/details/${project.id}`}>
             <Typography noWrap variant="body1" fontWeight={600} color="text.primary">
               {project.subject}
             </Typography>

@@ -8,12 +8,15 @@ import { styled } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import { supabase } from "@/lib/supabase"; // Supabase client
+
 import { Button } from "@mui/material";
 import { Document, Page, pdfjs } from "react-pdf";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Autocomplete, TextField } from "@mui/material";
 import TableIms from "@/components/table/table-ims";
 import { generateCustomQuotationPDF } from "./generateCustomQuotationPDF.jsx";
+import { useParams } from "react-router";
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 const Div = styled("div")({
   padding: "1.5rem",
@@ -28,7 +31,42 @@ const Label = styled("p")({
 export default function ProjectDetails({ href }) {
   const [pageNumber, setPageNumber] = useState(1);
   const [numPages, setNumPages] = useState(null);
+  const { id } = useParams(); // ambil ID dari URL
+  const [inquiry, setInquiry] = useState(null);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetchInquiryById = async () => {
+      const { data, error } = await supabase.from("inquiries").select("*").eq("id", id).single(); // agar hanya dapat satu objek
 
+      if (error) {
+        console.error("❌ Gagal ambil inquiry:", error.message);
+      } else {
+        setInquiry(data);
+        console.log("✅ Inquiry detail:", data);
+      }
+
+      setLoading(false);
+    };
+
+    fetchInquiryById();
+  }, [id]);
+  useEffect(() => {
+    const fetchInquiryItems = async () => {
+      const { data: inquiry_items, error } = await supabase.from("inquiry_items").select("*").eq("inquiry_id", id);
+
+      if (error) {
+        console.error("❌ Gagal ambil inquiry_items:", error.message);
+      } else {
+        setItems(inquiry_items);
+        console.log("✅ Items:", inquiry_items);
+      }
+
+      setLoading(false);
+    };
+
+    fetchInquiryItems();
+  }, [id]);
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
     setPageNumber(1);
@@ -126,7 +164,7 @@ export default function ProjectDetails({ href }) {
             {/* Header */}
             <Box display="flex" justifyContent="space-between" alignItems="center" m={2}>
               <Typography variant="body2" fontWeight={600}>
-                {data.inquiry_code}
+                INQ-2025-{inquiry?.id}
               </Typography>
               <Button variant="contained" color="primary" size="medium" onClick={() => generateCustomQuotationPDF()}>
                 Generate Document
@@ -141,21 +179,21 @@ export default function ProjectDetails({ href }) {
                   Inquiry Information
                 </Typography>
                 <Typography variant="h4" fontWeight={400}>
-                  {data.customer_name}
+                  {inquiry?.customer_name}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ textTransform: "capitalize", mt: 1 }}>
-                  {data.contact_person}
+                  {inquiry?.contact_person}
                 </Typography>
 
                 <Box mt={4}>
                   <Stack spacing={2}>
-                    <InfoRow label="No Request" value={data.inquiry_code} />
-                    <InfoRow label="Date" value={data.date} />
-                    <InfoRow label="Due Date" value={data.due_date} />
-                    <InfoRow label="Priority" value={data.priority} />
-                    <InfoRow label="Status" value={<Chip label={data.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} size="small" color={getStatusColor(data.status)} sx={{ fontWeight: 500 }} />} />
-                    <InfoRow label="Company" value={data.customer_name} />
-                    <InfoRow label="Contact Person" value={data.contact_person} />
+                    <InfoRow label="No Request" value={`INQ-2025-${inquiry?.id}`} />
+                    <InfoRow label="Date" value={inquiry?.created_at} />
+                    <InfoRow label="Due Date" value={inquiry?.due_date} />
+                    <InfoRow label="Priority" value={inquiry?.priority} />
+                    <InfoRow label="Status" value={<Chip label={inquiry?.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} size="small" color={getStatusColor(inquiry?.status)} sx={{ fontWeight: 500 }} />} />
+                    <InfoRow label="Company" value={inquiry?.customer_name} />
+                    <InfoRow label="Contact Person" value={inquiry?.contact_person} />
 
                     {/* Assigned To - editable */}
                     <Box display="flex" alignItems="center" gap={2}>
@@ -167,7 +205,7 @@ export default function ProjectDetails({ href }) {
                       <Autocomplete
                         options={userOptions}
                         getOptionLabel={(option) => option.label}
-                        value={userOptions.find((u) => u.id === data.assigned_to) || null}
+                        value={userOptions.find((u) => u.id === inquiry?.assigned_to) || null}
                         onChange={(event, newValue) => {
                           if (newValue) {
                             setData((prev) => ({ ...prev, assigned_to: newValue.id }));
@@ -178,9 +216,9 @@ export default function ProjectDetails({ href }) {
                       />
                     </Box>
 
-                    <InfoRow label="Subject" value={data.subject} />
-                    <InfoRow label="Description" value={data.notes} />
-                    <InfoRow label="Source" value={data.source} />
+                    <InfoRow label="Subject" value={inquiry?.subject} />
+                    <InfoRow label="Description" value={inquiry?.notes} />
+                    <InfoRow label="Source" value={inquiry?.source} />
                   </Stack>
                 </Box>
               </Grid>
@@ -225,7 +263,7 @@ export default function ProjectDetails({ href }) {
                           />
                         ) : file.type === "pdf" ? (
                           <>
-                            <Document file="/static/pdf.pdf" onLoadSuccess={onDocumentLoadSuccess} loading="Loading PDF...">
+                            <Document file={inquiry?.reference_file_url} onLoadSuccess={onDocumentLoadSuccess} loading="Loading PDF...">
                               {/* Jangan loop Page, render hanya 1 halaman */}
                               <Page key={`page_${pageNumber}`} pageNumber={pageNumber} renderTextLayer={false} renderAnnotationLayer={false} customTextRenderer={false} />
                             </Document>
@@ -315,7 +353,7 @@ export default function ProjectDetails({ href }) {
                 Item Requested
               </Typography>
 
-              {data.items.map((item, i) => (
+              {items.map((item, i) => (
                 <Box key={i} mb={3} p={2} border={1} borderColor="grey.300" borderRadius={2}>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                     <Box>

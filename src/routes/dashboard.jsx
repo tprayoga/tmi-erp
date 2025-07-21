@@ -281,7 +281,7 @@ export const DashboardRoutes = [
             element: <ProjectV3 />,
           },
           {
-            path: "details",
+            path: "details/:id",
             element: <ProjectDetails />,
           },
           {
