@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TextField, Button, Grid, Typography, MenuItem, CircularProgress } from "@mui/material";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
-import { supabase } from "@/lib/supabase"; // SUPABASE CLIENT
+import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form";
+import { supabase } from "@/lib/supabase";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router";
-import { status } from "nprogress";
+
 const CreateProjectPageView = () => {
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -42,33 +42,47 @@ const CreateProjectPageView = () => {
     control,
     name: "items",
   });
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+  const [selectedPICId, setSelectedPICId] = useState(null);
+  const [customerList, setCustomerList] = useState([]);
+  const [customerPics, setCustomerPics] = useState([]);
+  const [filteredContacts, setFilteredContacts] = useState([]);
 
-      const newItems = json.map((item) => ({
-        product_name: item.product_name || "",
-        quantity: item.quantity || "",
-        unit: item.unit || "",
-        specification: item.specification || "",
-        brand_preferred: item.brand_preferred || "",
-      }));
+  const selectedCustomerName = useWatch({ control, name: "customer_name" });
+  const selectedContact = useWatch({ control, name: "contact_person" });
 
-      newItems.forEach((item) => append(item));
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      const { data } = await supabase.from("customers").select("*");
+      setCustomerList(data || []);
     };
-    reader.readAsArrayBuffer(file);
-  };
+
+    const fetchCustomerPics = async () => {
+      const { data } = await supabase.from("customer_pics").select("*, customers(nama_pt)");
+      setCustomerPics(data || []);
+    };
+
+    fetchCustomers();
+    fetchCustomerPics();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCustomerName) {
+      const contacts = customerPics.filter((pic) => pic.customers?.nama_pt === selectedCustomerName).map((pic) => ({ label: pic.nama, value: pic.nama, id: pic.id }));
+      setFilteredContacts(contacts);
+      setValue("contact_person", "");
+    }
+  }, [selectedCustomerName, customerPics, setValue]);
+
+  useEffect(() => {
+    if (selectedCustomerName && selectedContact) {
+      const pic = customerPics.find((p) => p.customers?.nama_pt === selectedCustomerName && p.nama === selectedContact);
+      setSelectedPICId(pic?.id ?? null);
+    }
+  }, [selectedCustomerName, selectedContact, customerPics]);
 
   const onSubmit = async (formValues) => {
     try {
-      // 1. Simpan ke tabel inquiries
       const { data: inquiry, error: inquiryError } = await supabase
         .from("inquiries")
         .insert([
@@ -86,6 +100,7 @@ const CreateProjectPageView = () => {
             reference_file_url: formValues.reference_file_url,
             assigned_to: formValues.assigned_to,
             status: "open",
+            customer_id: selectedPICId, // fix FK
           },
         ])
         .select()
@@ -93,7 +108,6 @@ const CreateProjectPageView = () => {
 
       if (inquiryError) throw inquiryError;
 
-      // 2. Simpan items
       const items = formValues.items.map((item) => ({
         inquiry_id: inquiry.id,
         product_name: item.product_name,
@@ -123,7 +137,7 @@ const CreateProjectPageView = () => {
     const fileExt = file.name.split(".").pop();
     const filePath = `${Date.now()}.${fileExt}`;
 
-    const { data, error } = await supabase.storage.from("tmi").upload(filePath, file);
+    const { error } = await supabase.storage.from("tmi").upload(filePath, file);
 
     if (error) {
       console.error("Upload error:", error.message);
@@ -141,30 +155,70 @@ const CreateProjectPageView = () => {
     setUploading(false);
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      const newItems = json.map((item) => ({
+        product_name: item.product_name || "",
+        quantity: item.quantity || "",
+        unit: item.unit || "",
+        specification: item.specification || "",
+        brand_preferred: item.brand_preferred || "",
+      }));
+
+      newItems.forEach((item) => append(item));
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const selectOptions = {
+    customer_name: customerList.map((c) => ({ label: c.nama_pt, value: c.nama_pt })),
+    contact_person: filteredContacts,
+    priority: ["Low", "Medium", "High"].map((v) => ({ label: v, value: v })),
+    source: ["WhatsApp", "Email", "Call", "Web"].map((v) => ({ label: v, value: v })),
+    assigned_to: ["User A", "User B"].map((v) => ({ label: v, value: v })),
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} style={{ padding: 24 }}>
       <Typography variant="h5" gutterBottom>
         Form Inquiry
       </Typography>
       <Grid container spacing={2}>
-        {[
-          { name: "customer_name", label: "Customer Name" },
-          { name: "contact_person", label: "Contact Person" },
-          { name: "email", label: "Email" },
-          { name: "phone", label: "Phone" },
-          { name: "subject", label: "Subject" },
-          { name: "due_date", label: "Due Date", type: "date" },
-          { name: "priority", label: "Priority" },
-          { name: "source", label: "Source" },
-          { name: "assigned_to", label: "Assigned To" },
-          { name: "notes", label: "Notes", multiline: true },
-        ].map(({ name, label, ...props }) => (
+        {["customer_name", "contact_person", "email", "phone", "subject", "due_date", "priority", "source", "assigned_to", "notes"].map((name) => (
           <Grid item xs={12} sm={6} key={name}>
-            <Controller name={name} control={control} render={({ field }) => <TextField InputLabelProps={{ shrink: true }} fullWidth label={label} {...field} {...props} />} />
+            <Controller
+              name={name}
+              control={control}
+              render={({ field }) => {
+                if (selectOptions[name]) {
+                  return (
+                    <TextField select fullWidth label={name.replace(/_/g, " ")} {...field} InputLabelProps={{ shrink: true }}>
+                      {selectOptions[name].map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  );
+                } else if (name === "due_date") {
+                  return <TextField fullWidth type="date" label="Due Date" {...field} InputLabelProps={{ shrink: true }} />;
+                } else {
+                  return <TextField fullWidth label={name.replace(/_/g, " ")} {...field} InputLabelProps={{ shrink: true }} />;
+                }
+              }}
+            />
           </Grid>
         ))}
 
-        {/* Upload File */}
         <Grid item xs={12}>
           <Button variant="outlined" component="label" disabled={uploading}>
             {uploading ? <CircularProgress size={20} /> : "Upload Reference File"}
@@ -173,10 +227,10 @@ const CreateProjectPageView = () => {
           {fileName && <Typography variant="body2">Uploaded: {fileName}</Typography>}
         </Grid>
 
-        {/* Items */}
         <Grid item xs={12}>
           <Typography variant="h6">Items</Typography>
         </Grid>
+
         {fields.map((item, index) => (
           <Grid container spacing={2} key={item.id}>
             {["product_name", "quantity", "unit", "specification", "brand_preferred"].map((fieldKey) => (
@@ -191,29 +245,21 @@ const CreateProjectPageView = () => {
             </Grid>
           </Grid>
         ))}
+
         <Grid item xs={12}>
           <Button variant="contained" onClick={() => append({})} sx={{ mr: 2 }}>
             Tambah Item Manual
           </Button>
-
           <Button variant="outlined" component="label">
             Upload Excel Item
             <input type="file" accept=".xlsx" hidden onChange={handleFileUpload} />
           </Button>
         </Grid>
 
-        {/* Submit */}
         <Grid item xs={12}>
           <Grid container justifyContent="flex-end" spacing={2}>
             <Grid item>
-              <Button
-                variant="outlined"
-                color="inherit"
-                onClick={() => {
-                  // bisa arahkan ke halaman lain jika perlu
-                  window.history.back(); // atau navigate(-1) jika pakai react-router
-                }}
-              >
+              <Button variant="outlined" color="inherit" onClick={() => window.history.back()}>
                 Cancel
               </Button>
             </Grid>

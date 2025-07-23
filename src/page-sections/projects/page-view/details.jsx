@@ -10,7 +10,7 @@ import Chip from "@mui/material/Chip";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { supabase } from "@/lib/supabase"; // Supabase client
 
-import { Button } from "@mui/material";
+import { Button, MenuItem } from "@mui/material";
 import { Document, Page, pdfjs } from "react-pdf";
 import { useState, useMemo, useEffect } from "react";
 import { Autocomplete, TextField } from "@mui/material";
@@ -37,8 +37,7 @@ export default function ProjectDetails({ href }) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const fetchInquiryById = async () => {
-      const { data, error } = await supabase.from("inquiries").select("*").eq("id", id).single(); // agar hanya dapat satu objek
-
+      const { data, error } = await supabase.from("inquiries").select("*, inquiry_quotation(qou_id)").eq("id", id).single();
       if (error) {
         console.error("❌ Gagal ambil inquiry:", error.message);
       } else {
@@ -155,6 +154,129 @@ export default function ProjectDetails({ href }) {
       { description: 'Monitor LG 27"', qty: 1, price: 5000000 },
     ],
   };
+  const handleProcess = async () => {
+    if (!inquiry?.id) {
+      alert("Inquiry ID tidak ditemukan.");
+      return;
+    }
+
+    const { data, error } = await supabase.from("inquiries").update({ status: "in_progress" }).eq("id", inquiry.id).select().single();
+
+    if (error) {
+      console.error("❌ Gagal update status:", error.message);
+      alert("Gagal mengubah status.");
+    } else {
+      alert("✅ Status berhasil diubah menjadi 'in_progress'");
+      window.location.reload();
+      // opsional: bisa refetch inquiry atau redirect
+      // navigate(`/inquiries/${inquiry.id}`);
+    }
+  };
+  const handleProcessQuot = async () => {
+    if (!inquiry?.id) {
+      alert("Inquiry ID tidak ditemukan.");
+      return;
+    }
+
+    const { data, error } = await supabase.from("inquiries").update({ status: "waiting_customer" }).eq("id", inquiry.id).select().single();
+
+    if (error) {
+      console.error("❌ Gagal update status:", error.message);
+      alert("Gagal mengubah status.");
+    } else {
+      alert("✅ Status berhasil diubah menjadi 'waiting_customer'");
+      window.location.reload();
+      // opsional: bisa refetch inquiry atau redirect
+      // navigate(`/inquiries/${inquiry.id}`);
+    }
+  };
+  const handleProcesslost = async () => {
+    if (!inquiry?.id) {
+      alert("Inquiry ID tidak ditemukan.");
+      return;
+    }
+
+    const { data, error } = await supabase.from("inquiries").update({ status: "closed_lost" }).eq("id", inquiry.id).select().single();
+
+    if (error) {
+      console.error("❌ Gagal update status:", error.message);
+      alert("Gagal mengubah status.");
+    } else {
+      alert("✅ Status berhasil diubah menjadi 'closed_lost'");
+      window.location.reload();
+      // opsional: bisa refetch inquiry atau redirect
+      // navigate(`/inquiries/${inquiry.id}`);
+    }
+  };
+  const handleProcesswon = async () => {
+    if (!inquiry?.id) {
+      alert("Inquiry ID tidak ditemukan.");
+      return;
+    }
+
+    const { data, error } = await supabase.from("inquiries").update({ status: "closed_won" }).eq("id", inquiry.id).select().single();
+
+    if (error) {
+      console.error("❌ Gagal update status:", error.message);
+      alert("Gagal mengubah status.");
+    } else {
+      alert("✅ Status berhasil diubah menjadi 'closed_won'");
+      window.location.reload();
+      // opsional: bisa refetch inquiry atau redirect
+      // navigate(`/inquiries/${inquiry.id}`);
+    }
+  };
+  const handleProcesscan = async () => {
+    if (!inquiry?.id) {
+      alert("Inquiry ID tidak ditemukan.");
+      return;
+    }
+
+    const { data, error } = await supabase.from("inquiries").update({ status: "cancelled" }).eq("id", inquiry.id).select().single();
+
+    if (error) {
+      console.error("❌ Gagal update status:", error.message);
+      alert("Gagal mengubah status.");
+    } else {
+      alert("✅ Status berhasil diubah menjadi 'cancelled'");
+      window.location.reload();
+      // opsional: bisa refetch inquiry atau redirect
+      // navigate(`/inquiries/${inquiry.id}`);
+    }
+  };
+
+  const [hargaMap, setHargaMap] = useState({});
+  const handleHargaChange = async (e, itemId) => {
+    const newHarga = e.target.value;
+
+    // Update lokal state
+    setHargaMap((prev) => ({
+      ...prev,
+      [itemId]: newHarga,
+    }));
+
+    // Update ke Supabase
+    const { data, error } = await supabase
+      .from("inquiry_items")
+      .update({ price: newHarga }) // Pastikan kolom "harga" ada di DB
+      .eq("id", itemId)
+      .select();
+
+    if (error) {
+      console.error(`❌ Gagal update harga item ${itemId}:`, error.message);
+    } else {
+      console.log(`✅ Harga item ${itemId} berhasil diperbarui`, data);
+    }
+  };
+  const totalHarga = useMemo(() => {
+    return items.reduce((acc, item) => {
+      const harga = parseFloat(hargaMap[item.id] ?? item.price) || 0;
+      const qty = parseFloat(item.quantity) || 0;
+      return acc + harga * qty;
+    }, 0);
+  }, [items, hargaMap]);
+  console.log("inquiry:", inquiry);
+  console.log("items:", items);
 
   return (
     <div container className="pt-2 pb-4">
@@ -166,9 +288,11 @@ export default function ProjectDetails({ href }) {
               <Typography variant="body2" fontWeight={600}>
                 INQ-2025-{inquiry?.id}
               </Typography>
-              <Button variant="contained" color="primary" size="medium" onClick={() => generateCustomQuotationPDF()}>
-                Generate Document
-              </Button>
+              {inquiry?.status !== "open" && (
+                <Button variant="contained" color="primary" size="medium" onClick={() => generateCustomQuotationPDF(inquiry, items)}>
+                  Generate Document
+                </Button>
+              )}
             </Box>
 
             {/* Body: Info kiri + Attachment kanan */}
@@ -197,23 +321,16 @@ export default function ProjectDetails({ href }) {
 
                     {/* Assigned To - editable */}
                     <Box display="flex" alignItems="center" gap={2}>
-                      <Box minWidth={150}>
-                        <Typography variant="body1" fontWeight={600} color="text.primary">
-                          Assigned To
-                        </Typography>
-                      </Box>
-                      <Autocomplete
-                        options={userOptions}
-                        getOptionLabel={(option) => option.label}
-                        value={userOptions.find((u) => u.id === inquiry?.assigned_to) || null}
-                        onChange={(event, newValue) => {
-                          if (newValue) {
-                            setData((prev) => ({ ...prev, assigned_to: newValue.id }));
-                          }
-                        }}
-                        renderInput={(params) => <TextField {...params} label="Select User" size="small" fullWidth />}
-                        sx={{ width: "100%", maxWidth: 300 }}
-                      />
+                      <TextField
+                        select
+                        fullWidth
+                        label="Assigned To"
+                        InputLabelProps={{ shrink: true }}
+                        defaultValue="user A" // atau gunakan value yang dikontrol
+                      >
+                        <MenuItem value="userA">user A</MenuItem>
+                        <MenuItem value="userB">user B</MenuItem>
+                      </TextField>
                     </Box>
 
                     <InfoRow label="Subject" value={inquiry?.subject} />
@@ -225,9 +342,15 @@ export default function ProjectDetails({ href }) {
 
               {/* RIGHT: ATTACHMENTS */}
               <Grid item xs={12} md={4}>
-                <Typography variant="body1" fontWeight={600} color="text.primary" gutterBottom>
-                  Attachments
-                </Typography>
+                {inquiry?.status === "waiting_customer" ? (
+                  <Typography variant="body1" fontWeight={600} color="text.primary" gutterBottom>
+                    Quotation
+                  </Typography>
+                ) : (
+                  <Typography variant="body1" fontWeight={600} color="text.primary" gutterBottom>
+                    Attachments
+                  </Typography>
+                )}
 
                 {!data.attachments?.length ? (
                   <Typography variant="body2" color="text.secondary">
@@ -364,27 +487,21 @@ export default function ProjectDetails({ href }) {
                         {item?.quantity} {item?.unit} • {item?.specification} • Preferred: {item?.brand_preferred}
                       </Typography>
                     </Box>
-
-                    <Box width={200}>
-                      <TextField
-                        label="Harga (Rp)"
-                        type="number"
-                        size="small"
-                        fullWidth
-                        value={item.price || ""}
-                        onChange={(e) => {
-                          const newPrice = e.target.value;
-                          setData((prevData) => {
-                            const newItems = [...prevData.items];
-                            newItems[i] = { ...newItems[i], price: newPrice };
-                            return { ...prevData, items: newItems };
-                          });
-                        }}
-                      />
-                    </Box>
+                    {inquiry?.status !== "open" && (
+                      <Box width={200}>
+                        <TextField label="Harga (Rp)" type="number" size="small" fullWidth value={hargaMap[item.id] ?? item.price ?? ""} onChange={(e) => handleHargaChange(e, item.id)} InputLabelProps={{ shrink: true }} />{" "}
+                      </Box>
+                    )}
                   </Stack>
                 </Box>
               ))}
+              {items?.length > 0 && inquiry?.status !== "open" && (
+                <Box mt={2} textAlign="right">
+                  <Typography variant="h6" fontWeight={600}>
+                    Total Harga: Rp {totalHarga.toLocaleString("id-ID")}
+                  </Typography>
+                </Box>
+              )}
             </Div>
 
             {/* 
@@ -403,12 +520,33 @@ export default function ProjectDetails({ href }) {
         </Grid>
       </Grid>
       <Box display="flex" justifyContent="flex-end" gap={2} mt={2} pb={4}>
-        <Button variant="outlined" color="primary" size="medium">
-          Refuse
-        </Button>
-        <Button variant="contained" color="primary" size="medium">
-          Create Quotation
-        </Button>
+        {inquiry?.status === "open" && (
+          <>
+            <Button variant="outlined" color="primary" size="medium" onClick={handleProcesscan}>
+              Cancel
+            </Button>
+            <Button variant="contained" color="primary" size="medium" onClick={handleProcess}>
+              Process
+            </Button>
+          </>
+        )}
+        {inquiry?.status === "in_progress" && (
+          <>
+            <Button variant="contained" color="primary" size="medium" onClick={handleProcessQuot}>
+              Create Quotation
+            </Button>
+          </>
+        )}
+        {inquiry?.status === "waiting_customer" && (
+          <>
+            <Button variant="outlined" color="primary" size="medium" onClick={handleProcesslost}>
+              Closed Lost
+            </Button>
+            <Button variant="contained" color="primary" size="medium" onClick={handleProcesswon}>
+              Closed Won
+            </Button>
+          </>
+        )}
       </Box>
     </div>
   );

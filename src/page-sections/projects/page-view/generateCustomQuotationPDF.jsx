@@ -2,6 +2,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logo from "./logo.png"; // path logo perusahaan
+import { supabase } from "@/lib/supabase";
 
 const formatCurrency = (num) =>
   new Intl.NumberFormat("id-ID", {
@@ -13,9 +14,37 @@ const formatCurrency = (num) =>
     .replace("Rp", "")
     .trim();
 
-export const generateCustomQuotationPDF = async () => {
-  const doc = new jsPDF({ unit: "mm", format: "A4" });
+export const generateCustomQuotationPDF = async (inquiry, items) => {
+  const dueDate = new Date(inquiry?.due_date);
+  const plus7Days = new Date(dueDate.setDate(dueDate.getDate() + 7));
+  const formatted = plus7Days.toLocaleDateString("id-ID", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
+  const doc = new jsPDF({ unit: "mm", format: "A4" });
+  const blob = doc.output("blob");
+  const fileName = `quotation-inq-${inquiry?.id}-${Date.now()}.pdf`;
+
+  const { error: uploadError } = await supabase.storage.from("tmi").upload(fileName, blob, {
+    contentType: "application/pdf",
+    upsert: true,
+  });
+
+  if (uploadError) {
+    console.error("Upload failed", uploadError.message);
+    return;
+  }
+
+  const { data: publicData } = supabase.storage.from("tmi").getPublicUrl(fileName);
+
+  await supabase.from("inquiry_quotation").insert([
+    {
+      inquiry_id: inquiry.id,
+      qou_id: publicData.publicUrl,
+    },
+  ]);
   // ==== HEADER: LOGO & PERUSAHAAN ====
   const img = new Image();
   img.src = logo;
@@ -45,18 +74,18 @@ export const generateCustomQuotationPDF = async () => {
   // ==== INFO QUOTE ====
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("QUOTE #: 11139", 14, 60);
-  doc.text("DATE: 11/07/2025", 160, 60);
+  doc.text(`QUOTE #:INQ-2025-${inquiry?.id}`, 14, 60);
+  doc.text(`DATE: ${inquiry?.due_date}`, 160, 60);
 
   // ==== CUSTOMER INFO ====
   doc.setFont("helvetica", "bold");
   doc.text("CUSTOMER", 14, 70);
   doc.setFont("helvetica", "normal");
-  const custInfo = ["NAME: Bandung Sejahtera", "ADDRESS:", "Jl. Baranang Siang, Kebon Pisang, Kec. Sumur", "Bandung, Kota. Bandung, Jawa Barat 40112", "EXPIRED DATE: 25/07/2025"];
+  const custInfo = [`NAME: ${inquiry?.customer_name}`, `CONTACT PERSON: ${inquiry?.contact_person}`, "ADDRESS:", "Jl. Baranang Siang, Kebon Pisang, Kec. Sumur", "Bandung, Kota. Bandung, Jawa Barat 40112", `EXPIRED DATE: ${formatted}`];
   custInfo.forEach((line, i) => doc.text(line, 14, 76 + i * 5));
 
   // ==== DATA ITEMS ====
-  const items = [
+  const itemsa = [
     {
       description: "Dyna Bolt M12 (Selongsong) x 135\nZinc Coating",
       qty: 2,
@@ -89,7 +118,7 @@ export const generateCustomQuotationPDF = async () => {
     },
   ];
 
-  const tableBody = items.map((item, idx) => [idx + 1, item.description, item.qty, item.unit, formatCurrency(item.price), "X", formatCurrency(item.qty * item.price)]);
+  const tableBody = items.map((item, idx) => [idx + 1, item?.product_name, item?.quantity, item?.unit, formatCurrency(item?.price), "X", formatCurrency(item?.quantity * item?.price)]);
 
   autoTable(doc, {
     startY: 105,
@@ -109,7 +138,7 @@ export const generateCustomQuotationPDF = async () => {
   });
 
   // ==== SUBTOTAL ====
-  const subtotal = items.reduce((acc, item) => acc + item.qty * item.price, 0);
+  const subtotal = items.reduce((acc, item) => acc + item.quantity * item.price, 0);
   const ppn = subtotal * 0.11;
   const total = subtotal + ppn;
   const y = doc.lastAutoTable.finalY + 5;
@@ -153,7 +182,6 @@ export const generateCustomQuotationPDF = async () => {
   doc.setFont("helvetica", "bold");
   doc.text("AMOUNT IN WORD", 14, inWordY);
   doc.setFont("helvetica", "normal");
-  doc.text("ONE HUNDRED SEVENTY SEVEN THOUSAND SIX HUNDRED RUPIAH", 14, inWordY + 6);
 
   // ==== FOOTER ====
   doc.setFontSize(9);
